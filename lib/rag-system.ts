@@ -1,4 +1,6 @@
-import { EmbeddingsGenerator } from './embeddings.js';
+import { GeminiEmbeddings } from './embeddings-gemini.js';
+import { LocalE5Embeddings } from './embeddings-local.js';
+import type { IEmbeddingsProvider } from './embeddings-provider.js';
 import type {
   ContextOptions,
   EmbeddingChapter,
@@ -9,21 +11,35 @@ import type {
 import { VectorDatabase } from './vector-db.js';
 
 export class RAGSystem {
-  private embeddings: EmbeddingsGenerator;
+  private embeddings: IEmbeddingsProvider;
   private vectorDb: VectorDatabase;
-  private config: Required<RAGConfig>;
+  private config: Required<Omit<RAGConfig, 'geminiApiKey'>> & { geminiApiKey?: string };
 
   constructor(config: RAGConfig) {
     this.config = {
       chromaUrl: './chroma_data',
-      embeddingModel: 'text-embedding-3-small',
       maxResults: 10,
       ...config,
     };
 
-    this.embeddings = new EmbeddingsGenerator(this.config.openaiApiKey, this.config.embeddingModel);
+    // Initialize embeddings provider based on config
+    switch (config.provider) {
+      case 'gemini':
+        if (!config.geminiApiKey) {
+          throw new Error('Gemini API key required for gemini provider');
+        }
+        this.embeddings = new GeminiEmbeddings(config.geminiApiKey);
+        break;
+      case 'e5-small':
+        this.embeddings = new LocalE5Embeddings('small');
+        break;
+      case 'e5-large':
+        this.embeddings = new LocalE5Embeddings('large');
+        break;
+      default:
+        throw new Error(`Unknown provider: ${config.provider}`);
+    }
 
-    // Una collection per timeline
     const collectionName = 'echoes_timeline';
     this.vectorDb = new VectorDatabase(this.config.chromaUrl, collectionName);
   }
@@ -34,7 +50,6 @@ export class RAGSystem {
 
     let results = await this.vectorDb.search(queryEmbedding, maxResults);
 
-    // Filtra per timeline/arc/pov se specificato
     if (options.timeline) {
       results = results.filter((r) => r.metadata.timelineName === options.timeline);
     }

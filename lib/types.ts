@@ -1,5 +1,7 @@
 import type { Chapter } from '@echoes-io/models';
 
+export type EmbeddingProvider = 'e5-small' | 'e5-large' | 'gemini';
+
 export interface SearchOptions {
   timeline?: string;
   arc?: string;
@@ -31,8 +33,8 @@ export interface EmbeddingChapter {
 }
 
 export interface RAGConfig {
-  openaiApiKey: string;
+  provider: EmbeddingProvider;
+  geminiApiKey?: string;
   chromaUrl?: string;
-  embeddingModel?: string;
   maxResults?: number;
 }

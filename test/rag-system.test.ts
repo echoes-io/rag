@@ -14,12 +14,11 @@ import { MockEmbeddingsGenerator } from './mocks/embeddings.js';
 class TestRAGSystem {
   private embeddings: MockEmbeddingsGenerator;
   private vectorDb: MockVectorDatabase;
-  private config: Required<RAGConfig>;
+  private config: Required<Omit<RAGConfig, 'geminiApiKey'>> & { geminiApiKey?: string };
 
   constructor(config: RAGConfig) {
     this.config = {
       chromaUrl: './chroma_data',
-      embeddingModel: 'text-embedding-3-small',
       maxResults: 10,
       ...config,
     };
@@ -124,7 +123,7 @@ describe('RAGSystem', () => {
 
   beforeEach(() => {
     rag = new TestRAGSystem({
-      openaiApiKey: 'mock-key',
+      provider: 'e5-small',
     });
   });
 
