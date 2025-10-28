@@ -35,6 +35,6 @@ export interface EmbeddingChapter {
 export interface RAGConfig {
   provider: EmbeddingProvider;
   geminiApiKey?: string;
-  chromaUrl?: string;
+  dbPath?: string;
   maxResults?: number;
 }

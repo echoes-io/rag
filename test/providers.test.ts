@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { GeminiEmbeddings } from '../lib/embeddings-gemini.js';
 import { LocalE5Embeddings } from '../lib/embeddings-local.js';
@@ -51,7 +51,7 @@ describe('LocalE5Embeddings - Small', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].embedding).toBeDefined();
-    expect(result[0].embedding!.length).toBeGreaterThan(0);
+    expect(result[0].embedding?.length).toBeGreaterThan(0);
   }, 60000);
 });
 
@@ -79,7 +79,7 @@ describe('LocalE5Embeddings - Large', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].embedding).toBeDefined();
-    expect(result[0].embedding!.length).toBeGreaterThan(0);
+    expect(result[0].embedding?.length).toBeGreaterThan(0);
   }, 300000);
 });
 

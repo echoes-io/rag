@@ -5,7 +5,7 @@ import type { EmbeddingChapter } from './types.js';
 
 export class GeminiEmbeddings implements IEmbeddingsProvider {
   private genAI: GoogleGenerativeAI;
-  private model: any;
+  private model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>;
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);

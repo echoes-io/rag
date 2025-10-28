@@ -2,6 +2,11 @@
 *.js
 *.d.ts
 
+# SQLite databases (except committed production DBs)
+*.db
+*.db-shm
+*.db-wal
+
 # Logs
 logs
 *.log

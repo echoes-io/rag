@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { LocalE5Embeddings } from '../lib/embeddings-local.js';
 import type { IEmbeddingsProvider } from '../lib/embeddings-provider.js';

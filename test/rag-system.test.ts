@@ -18,7 +18,7 @@ class TestRAGSystem {
 
   constructor(config: RAGConfig) {
     this.config = {
-      chromaUrl: './chroma_data',
+      dbPath: './rag_data.db',
       maxResults: 10,
       ...config,
     };

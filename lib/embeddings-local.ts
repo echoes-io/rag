@@ -1,10 +1,10 @@
-import { pipeline } from '@xenova/transformers';
+import { type FeatureExtractionPipeline, pipeline } from '@xenova/transformers';
 
 import type { IEmbeddingsProvider } from './embeddings-provider.js';
 import type { EmbeddingChapter } from './types.js';
 
 export class LocalE5Embeddings implements IEmbeddingsProvider {
-  private embedder: any;
+  private embedder: FeatureExtractionPipeline | null = null;
   private modelName: string;
 
   constructor(modelSize: 'small' | 'large' = 'small') {
@@ -19,6 +19,8 @@ export class LocalE5Embeddings implements IEmbeddingsProvider {
 
   async generateEmbedding(text: string): Promise<number[]> {
     await this.ensureLoaded();
+    if (!this.embedder) throw new Error('Embedder not loaded');
+
     const result = await this.embedder(`query: ${text}`, {
       pooling: 'mean',
       normalize: true,
@@ -28,10 +30,12 @@ export class LocalE5Embeddings implements IEmbeddingsProvider {
 
   async generateChapterEmbeddings(chapters: EmbeddingChapter[]): Promise<EmbeddingChapter[]> {
     await this.ensureLoaded();
+    if (!this.embedder) throw new Error('Embedder not loaded');
 
+    const embedder = this.embedder;
     return Promise.all(
       chapters.map(async (chapter) => {
-        const result = await this.embedder(`passage: ${chapter.content}`, {
+        const result = await embedder(`passage: ${chapter.content}`, {
           pooling: 'mean',
           normalize: true,
         });

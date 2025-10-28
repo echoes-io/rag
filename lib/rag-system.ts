@@ -17,7 +17,7 @@ export class RAGSystem {
 
   constructor(config: RAGConfig) {
     this.config = {
-      chromaUrl: './chroma_data',
+      dbPath: './rag_data.db',
       maxResults: 10,
       ...config,
     };
@@ -41,7 +41,7 @@ export class RAGSystem {
     }
 
     const collectionName = 'echoes_timeline';
-    this.vectorDb = new VectorDatabase(this.config.chromaUrl, collectionName);
+    this.vectorDb = new VectorDatabase(this.config.dbPath, collectionName);
   }
 
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
