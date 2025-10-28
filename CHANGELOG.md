@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/echoes-io/rag/compare/v1.1.0...v1.1.1) (2025-10-28)
+
+
+### Performance Improvements
+
+* :rotating_light: Better methods to validate ([aedb55d](https://github.com/echoes-io/rag/commit/aedb55dc7e9c20f29acc2e256a2ceb4ed10b7cab))
+
 # [1.1.0](https://github.com/echoes-io/rag/compare/v1.0.0...v1.1.0) (2025-10-28)
 
 
