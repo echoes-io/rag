@@ -46,7 +46,7 @@ export class VectorDatabase {
 
       // Validate embedding values
       const validEmbedding = chapter.embedding.map((val) =>
-        isNaN(val) || !isFinite(val) ? 0 : val,
+        Number.isNaN(val) || !Number.isFinite(val) ? 0 : val,
       );
 
       await this.db
