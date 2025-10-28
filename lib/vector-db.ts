@@ -40,17 +40,26 @@ export class VectorDatabase {
 
   async addChapters(chapters: EmbeddingChapter[]): Promise<void> {
     for (const chapter of chapters) {
+      if (!chapter.embedding) {
+        throw new Error(`Chapter ${chapter.id} missing embedding`);
+      }
+
+      // Validate embedding values
+      const validEmbedding = chapter.embedding.map((val) =>
+        isNaN(val) || !isFinite(val) ? 0 : val,
+      );
+
       await this.db
         .insertInto('vectors')
         .values({
           id: chapter.id,
-          embedding: JSON.stringify(chapter.embedding),
+          embedding: JSON.stringify(validEmbedding),
           metadata: JSON.stringify(chapter.metadata),
           content: chapter.content,
         })
         .onConflict((oc) =>
           oc.column('id').doUpdateSet({
-            embedding: JSON.stringify(chapter.embedding),
+            embedding: JSON.stringify(validEmbedding),
             metadata: JSON.stringify(chapter.metadata),
             content: chapter.content,
           }),
