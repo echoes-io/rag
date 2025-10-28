@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/echoes-io/rag/compare/v1.0.0...v1.1.0) (2025-10-28)
+
+
+### Bug Fixes
+
+* :ambulance: Fixed tests and compile errors ([282d6e7](https://github.com/echoes-io/rag/commit/282d6e734c333aabea4213ca53afe67d6c4320be))
+
+
+### Features
+
+* :truck: Moved to sqlite ([ee2c11b](https://github.com/echoes-io/rag/commit/ee2c11b856200b37406d92a7629b0894d45e7519))
+
 # 1.0.0 (2025-10-27)
 
 
