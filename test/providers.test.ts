@@ -44,7 +44,7 @@ describe('LocalE5Embeddings - Small', () => {
     expect(Array.isArray(embedding)).toBe(true);
     expect(embedding.length).toBeGreaterThan(0);
     expect(typeof embedding[0]).toBe('number');
-  }, 60000);
+  }, 120000); // 2 minutes for model download in CI
 
   it('should generate embeddings for chapters', async () => {
     const result = await embeddings.generateChapterEmbeddings([mockChapter]);
@@ -52,7 +52,7 @@ describe('LocalE5Embeddings - Small', () => {
     expect(result).toHaveLength(1);
     expect(result[0].embedding).toBeDefined();
     expect(result[0].embedding?.length).toBeGreaterThan(0);
-  }, 60000);
+  }, 120000); // 2 minutes for model download in CI
 });
 
 describe('LocalE5Embeddings - Large', () => {

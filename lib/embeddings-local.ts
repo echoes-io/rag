@@ -1,4 +1,4 @@
-import { type FeatureExtractionPipeline, pipeline } from '@xenova/transformers';
+import { env, type FeatureExtractionPipeline, pipeline } from '@xenova/transformers';
 
 import type { IEmbeddingsProvider } from './embeddings-provider.js';
 import type { EmbeddingChapter } from './types.js';
@@ -9,6 +9,12 @@ export class LocalE5Embeddings implements IEmbeddingsProvider {
 
   constructor(modelSize: 'small' | 'large' = 'small') {
     this.modelName = `Xenova/multilingual-e5-${modelSize}`;
+
+    // Disable cache in CI to avoid corrupted downloads
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      env.useBrowserCache = false;
+      env.allowLocalModels = false;
+    }
   }
 
   private async ensureLoaded() {
