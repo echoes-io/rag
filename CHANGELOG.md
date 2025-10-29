@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/echoes-io/rag/compare/v1.1.1...v1.1.2) (2025-10-29)
+
+
+### Performance Improvements
+
+* :arrow_up: Upped `@echoes-io/models` to allow `episode.number` to be non negative ([06310e3](https://github.com/echoes-io/rag/commit/06310e3ad24b28f951c268e0696b6d7fe0691761))
+
 ## [1.1.1](https://github.com/echoes-io/rag/compare/v1.1.0...v1.1.1) (2025-10-28)
 
 
