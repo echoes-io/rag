@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/echoes-io/rag/compare/v1.1.2...v1.1.3) (2025-10-30)
+
+
+### Performance Improvements
+
+* :truck: Renamed the default database from `rag_data.db` to `rag.db` ([f55e56b](https://github.com/echoes-io/rag/commit/f55e56bf782260515fdecbf6d4607de384047a8a))
+
 ## [1.1.2](https://github.com/echoes-io/rag/compare/v1.1.1...v1.1.2) (2025-10-29)
 
 
