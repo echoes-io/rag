@@ -17,7 +17,7 @@ export class RAGSystem {
 
   constructor(config: RAGConfig) {
     this.config = {
-      dbPath: './rag_data.db',
+      dbPath: './rag.db',
       maxResults: 10,
       ...config,
     };

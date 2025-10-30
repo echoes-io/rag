@@ -34,7 +34,7 @@ import { RAGSystem } from '@echoes-io/rag';
 
 const rag = new RAGSystem({
   provider: 'e5-small', // or 'e5-large', 'gemini'
-  dbPath: './rag_data.db'
+  dbPath: './rag.db'
 });
 
 // Search across all timelines
@@ -81,7 +81,7 @@ Automatically processes content from timeline repositories:
 const config = {
   provider: 'e5-small', // 'e5-small', 'e5-large', or 'gemini'
   geminiApiKey: process.env.GEMINI_API_KEY, // Required for 'gemini' provider
-  dbPath: './rag_data.db', // SQLite database file
+  dbPath: './rag.db', // SQLite database file
   maxResults: 10
 };
 ```
@@ -156,7 +156,7 @@ The system uses SQLite for vector storage with cosine similarity search computed
 - **Fast**: Suitable for hundreds to thousands of chapters
 - **Type-safe**: Uses Kysely query builder with TypeScript
 
-The database file (`rag_data.db`) contains embeddings, metadata, and content for all indexed chapters.
+The database file (`rag.db`) contains embeddings, metadata, and content for all indexed chapters.
 
 ---
 
