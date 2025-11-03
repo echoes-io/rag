@@ -40,8 +40,7 @@ export class RAGSystem {
         throw new Error(`Unknown provider: ${config.provider}`);
     }
 
-    const collectionName = 'echoes_timeline';
-    this.vectorDb = new VectorDatabase(this.config.dbPath, collectionName);
+    this.vectorDb = new VectorDatabase(this.config.dbPath);
   }
 
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {

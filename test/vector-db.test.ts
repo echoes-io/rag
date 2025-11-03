@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { EmbeddingChapter } from '../lib/types.js';
-import { MockVectorDatabase } from './mocks/chroma.js';
+import { MockVectorDatabase } from './mocks/vector-db.js';
 
 describe('VectorDatabase', () => {
   let db: MockVectorDatabase;

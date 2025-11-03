@@ -103,14 +103,11 @@ npm run build
 
 # Test
 npm test
-
-# Development mode
-npm run dev
 ```
 
 ### Known Issues
 
-**Test Worker Timeout**: When running tests, you may see a "Worker exited unexpectedly" error after all tests pass. This is a known issue with `@xenova/transformers` not properly cleaning up worker threads. All tests pass successfully (78/78), and this error doesn't affect functionality. The issue is tracked in the transformers.js repository.
+**Test Worker Timeout**: When running tests, you may see a "Worker exited unexpectedly" error after all tests pass. This is a known issue with `@xenova/transformers` not properly cleaning up worker threads. All tests pass successfully, and this error doesn't affect functionality.
 
 ## API Reference
 
@@ -139,8 +136,9 @@ interface SearchOptions {
 interface ContextOptions {
   query: string;
   timeline?: string;
+  arc?: string;
+  pov?: string;
   maxChapters?: number;
-  includeMetadata?: boolean;
 }
 
 interface RAGConfig {

@@ -8,7 +8,7 @@ import type {
   SearchOptions,
   SearchResult,
 } from '../lib/types.js';
-import { MockVectorDatabase } from './mocks/chroma.js';
+import { MockVectorDatabase } from './mocks/vector-db.js';
 
 // Test RAGSystem using real embeddings but mock VectorDB
 class TestRAGSystem {

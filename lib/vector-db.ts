@@ -18,7 +18,7 @@ export class VectorDatabase {
   private db: Kysely<DatabaseSchema>;
   private sqlite: Database.Database;
 
-  constructor(persistPath: string, _collectionName: string) {
+  constructor(persistPath: string) {
     this.sqlite = new Database(persistPath, { fileMustExist: false });
     this.db = new Kysely<DatabaseSchema>({
       dialect: new SqliteDialect({ database: this.sqlite }),
