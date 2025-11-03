@@ -1,7 +1,7 @@
 import { env, type FeatureExtractionPipeline, pipeline } from '@xenova/transformers';
 
-import type { IEmbeddingsProvider } from './embeddings-provider.js';
-import type { EmbeddingChapter } from './types.js';
+import type { EmbeddingChapter } from '../types.js';
+import type { IEmbeddingsProvider } from './provider.js';
 
 export class LocalE5Embeddings implements IEmbeddingsProvider {
   private embedder: FeatureExtractionPipeline | null = null;
@@ -51,5 +51,12 @@ export class LocalE5Embeddings implements IEmbeddingsProvider {
         };
       }),
     );
+  }
+
+  async dispose(): Promise<void> {
+    if (this.embedder) {
+      await this.embedder.dispose();
+      this.embedder = null;
+    }
   }
 }

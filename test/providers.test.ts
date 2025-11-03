@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { GeminiEmbeddings } from '../lib/embeddings-gemini.js';
-import { LocalE5Embeddings } from '../lib/embeddings-local.js';
+import { GeminiEmbeddings } from '../lib/embeddings/gemini.js';
+import { LocalE5Embeddings } from '../lib/embeddings/local.js';
 import { createMockChapter } from './helpers.js';
 
 const mockChapter = createMockChapter();
@@ -14,8 +14,7 @@ describe('LocalE5Embeddings - Small', () => {
   });
 
   afterAll(async () => {
-    // Force cleanup to prevent worker hanging
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await embeddings.dispose();
   });
 
   it('should initialize', () => {
@@ -47,8 +46,7 @@ describe('LocalE5Embeddings - Large', () => {
   });
 
   afterAll(async () => {
-    // Force cleanup to prevent worker hanging
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await embeddings.dispose();
   });
 
   it('should initialize', () => {

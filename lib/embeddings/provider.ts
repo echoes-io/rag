@@ -1,4 +1,4 @@
-import type { EmbeddingChapter } from './types.js';
+import type { EmbeddingChapter } from '../types.js';
 
 export interface IEmbeddingsProvider {
   generateEmbedding(text: string): Promise<number[]>;

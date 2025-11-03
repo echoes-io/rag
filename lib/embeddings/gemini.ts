@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-import type { IEmbeddingsProvider } from './embeddings-provider.js';
-import type { EmbeddingChapter } from './types.js';
+import type { EmbeddingChapter } from '../types.js';
+import type { IEmbeddingsProvider } from './provider.js';
 
 export class GeminiEmbeddings implements IEmbeddingsProvider {
   private genAI: GoogleGenerativeAI;

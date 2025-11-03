@@ -1,6 +1,6 @@
-import { GeminiEmbeddings } from './embeddings-gemini.js';
-import { LocalE5Embeddings } from './embeddings-local.js';
-import type { IEmbeddingsProvider } from './embeddings-provider.js';
+import { GeminiEmbeddings } from './embeddings/gemini.js';
+import { LocalE5Embeddings } from './embeddings/local.js';
+import type { IEmbeddingsProvider } from './embeddings/provider.js';
 import { NERExtractor } from './ner-extractor.js';
 import type {
   ContextOptions,
