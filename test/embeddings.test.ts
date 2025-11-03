@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { createMockChapter } from './helpers.js';
 import { MockEmbeddingsGenerator } from './mocks/embeddings.js';
 
 describe('EmbeddingsGenerator', () => {
@@ -32,27 +33,9 @@ describe('EmbeddingsGenerator', () => {
 
   describe('generateChapterEmbeddings', () => {
     it('should generate embeddings for multiple chapters', async () => {
-      const mockMetadata = {
-        timelineName: 'test',
-        arcName: 'test',
-        episodeNumber: 1,
-        partNumber: 1,
-        number: 1,
-        pov: 'test',
-        title: 'Test',
-        date: new Date(),
-        excerpt: 'Test excerpt',
-        location: 'Test',
-        words: 100,
-        characters: 500,
-        charactersNoSpaces: 400,
-        paragraphs: 5,
-        sentences: 10,
-        readingTimeMinutes: 1,
-      };
       const chapters = [
-        { id: '1', metadata: mockMetadata, content: 'First chapter' },
-        { id: '2', metadata: mockMetadata, content: 'Second chapter' },
+        createMockChapter({ title: 'First chapter' }),
+        createMockChapter({ title: 'Second chapter', number: 2, chapter: 2 }),
       ];
 
       const result = await generator.generateChapterEmbeddings(chapters);

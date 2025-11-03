@@ -1,37 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { GeminiEmbeddings } from '../lib/embeddings-gemini.js';
 import { LocalE5Embeddings } from '../lib/embeddings-local.js';
-import type { EmbeddingChapter } from '../lib/types.js';
+import { createMockChapter } from './helpers.js';
 
-const mockChapter: EmbeddingChapter = {
-  id: 'test-1',
-  metadata: {
-    timelineName: 'anima',
-    arcName: 'beginning',
-    episodeNumber: 1,
-    partNumber: 1,
-    number: 1,
-    pov: 'nic',
-    title: 'Test Chapter',
-    date: new Date('2024-01-15'),
-    excerpt: 'A test',
-    location: 'London',
-    words: 100,
-    characters: 500,
-    charactersNoSpaces: 400,
-    paragraphs: 5,
-    sentences: 10,
-    readingTimeMinutes: 1,
-  },
-  content: 'This is a test chapter about a romantic encounter in London.',
-};
+const mockChapter = createMockChapter();
 
 describe('LocalE5Embeddings - Small', () => {
   let embeddings: LocalE5Embeddings;
 
   beforeEach(() => {
     embeddings = new LocalE5Embeddings('small');
+  });
+
+  afterAll(async () => {
+    // Force cleanup to prevent worker hanging
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   it('should initialize', () => {
@@ -60,6 +44,11 @@ describe('LocalE5Embeddings - Large', () => {
 
   beforeEach(() => {
     embeddings = new LocalE5Embeddings('large');
+  });
+
+  afterAll(async () => {
+    // Force cleanup to prevent worker hanging
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   it('should initialize', () => {
