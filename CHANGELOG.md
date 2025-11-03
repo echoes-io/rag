@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/echoes-io/rag/compare/v1.1.3...v1.2.0) (2025-11-03)
+
+
+### Features
+
+* :sparkles: Added NER ([ed10e7d](https://github.com/echoes-io/rag/commit/ed10e7d3ee272ec981b71e7c45b0674d63be18b1))
+
+
+### Performance Improvements
+
+* :arrow_up: Upped deps + fixed tests ([0de5e3f](https://github.com/echoes-io/rag/commit/0de5e3f98e9cc8e24a774f069a009c318c61c0eb))
+* :zap: Simplify everything ([bfedec5](https://github.com/echoes-io/rag/commit/bfedec5a0a694120c851883f2204fdeee69529ca))
+
 ## [1.1.3](https://github.com/echoes-io/rag/compare/v1.1.2...v1.1.3) (2025-10-30)
 
 
