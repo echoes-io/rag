@@ -1,3 +1,4 @@
+export { NERExtractor } from './ner-extractor.js';
 export { RAGSystem } from './rag-system.js';
 export type {
   ContextOptions,

@@ -1,6 +1,7 @@
 import { GeminiEmbeddings } from './embeddings-gemini.js';
 import { LocalE5Embeddings } from './embeddings-local.js';
 import type { IEmbeddingsProvider } from './embeddings-provider.js';
+import { NERExtractor } from './ner-extractor.js';
 import type {
   ContextOptions,
   EmbeddingChapter,
@@ -13,6 +14,7 @@ import { VectorDatabase } from './vector-db.js';
 export class RAGSystem {
   private embeddings: IEmbeddingsProvider;
   private vectorDb: VectorDatabase;
+  private nerExtractor: NERExtractor;
   private config: Required<Omit<RAGConfig, 'geminiApiKey'>> & { geminiApiKey?: string };
 
   constructor(config: RAGConfig) {
@@ -41,6 +43,7 @@ export class RAGSystem {
     }
 
     this.vectorDb = new VectorDatabase(this.config.dbPath);
+    this.nerExtractor = new NERExtractor();
   }
 
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
@@ -58,6 +61,17 @@ export class RAGSystem {
     if (options.pov) {
       results = results.filter((r) => r.metadata.pov === options.pov);
     }
+    if (options.characters) {
+      results = results.filter((r) => {
+        const chapterChars = r.metadata.characterNames || [];
+        if (options.allCharacters) {
+          // AND: all characters must be present
+          return options.characters!.every((c) => chapterChars.includes(c));
+        }
+        // OR: at least one character must be present
+        return options.characters!.some((c) => chapterChars.includes(c));
+      });
+    }
 
     return results;
   }
@@ -72,16 +86,44 @@ export class RAGSystem {
   }
 
   async addChapter(chapter: EmbeddingChapter): Promise<void> {
+    // Extract characters if not present
+    if (!chapter.metadata.characterNames) {
+      chapter.metadata.characterNames = await this.nerExtractor.extractCharacters(chapter.content);
+    }
+
     const [withEmbedding] = await this.embeddings.generateChapterEmbeddings([chapter]);
     await this.vectorDb.addChapters([withEmbedding]);
   }
 
   async addChapters(chapters: EmbeddingChapter[]): Promise<void> {
+    // Extract characters for all chapters
+    for (const chapter of chapters) {
+      if (!chapter.metadata.characterNames) {
+        chapter.metadata.characterNames = await this.nerExtractor.extractCharacters(
+          chapter.content,
+        );
+      }
+    }
+
     const withEmbeddings = await this.embeddings.generateChapterEmbeddings(chapters);
     await this.vectorDb.addChapters(withEmbeddings);
   }
 
   async deleteChapter(id: string): Promise<void> {
     await this.vectorDb.deleteChapter(id);
+  }
+
+  async getCharacterMentions(characterName: string): Promise<string[]> {
+    const chapters = await this.search(characterName, { maxResults: 1000 });
+    const allCharacters = new Set<string>();
+
+    for (const chapter of chapters) {
+      const characters = chapter.metadata.characterNames || [];
+      for (const char of characters) {
+        allCharacters.add(char);
+      }
+    }
+
+    return Array.from(allCharacters);
   }
 }
