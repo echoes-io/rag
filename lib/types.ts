@@ -1,6 +1,6 @@
 import type { Chapter } from '@echoes-io/models';
 
-export type EmbeddingProvider = 'e5-small' | 'e5-large' | 'gemini';
+export type EmbeddingProvider = 'e5-small' | 'e5-large' | 'gemini' | 'openai';
 
 // Extended Chapter with NER results
 export interface ChapterWithCharacters extends Chapter {
@@ -43,6 +43,8 @@ export interface EmbeddingChapter {
 export interface RAGConfig {
   provider: EmbeddingProvider;
   geminiApiKey?: string;
+  openaiApiKey?: string;
   dbPath?: string;
   maxResults?: number;
+  storeFullContent?: boolean; // Default: true (store full content)
 }

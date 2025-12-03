@@ -1,6 +1,8 @@
-import { GeminiEmbeddings } from './embeddings/gemini.js';
-import { LocalE5Embeddings } from './embeddings/local.js';
-import type { IEmbeddingsProvider } from './embeddings/provider.js';
+import { type Connection, connect, type Table } from '@lancedb/lancedb';
+import { GeminiEmbedding } from '@llamaindex/google';
+import { HuggingFaceEmbedding } from '@llamaindex/huggingface';
+import { Settings } from 'llamaindex';
+
 import { NERExtractor } from './ner-extractor.js';
 import type {
   ContextOptions,
@@ -9,71 +11,152 @@ import type {
   SearchOptions,
   SearchResult,
 } from './types.js';
-import { VectorDatabase } from './vector-db.js';
+
+interface LanceDBRow extends Record<string, unknown> {
+  id: string;
+  vector: number[];
+  content: string;
+  metadata: string; // JSON stringified
+}
 
 export class RAGSystem {
-  private embeddings: IEmbeddingsProvider;
-  private vectorDb: VectorDatabase;
+  private db?: Connection;
+  private table?: Table;
   private nerExtractor: NERExtractor;
-  private config: Required<Omit<RAGConfig, 'geminiApiKey'>> & { geminiApiKey?: string };
+  private config: Required<Omit<RAGConfig, 'geminiApiKey' | 'openaiApiKey'>> & {
+    geminiApiKey?: string;
+    openaiApiKey?: string;
+  };
 
   constructor(config: RAGConfig) {
     this.config = {
-      dbPath: './rag.db',
+      dbPath: './lancedb',
       maxResults: 10,
+      storeFullContent: true, // Default: store full content
       ...config,
     };
 
-    // Initialize embeddings provider based on config
-    switch (config.provider) {
+    this.nerExtractor = new NERExtractor();
+    this.initializeSettings();
+  }
+
+  private initializeSettings(): void {
+    // Configure embedding model
+    switch (this.config.provider) {
       case 'gemini':
-        if (!config.geminiApiKey) {
+        if (!this.config.geminiApiKey) {
           throw new Error('Gemini API key required for gemini provider');
         }
-        this.embeddings = new GeminiEmbeddings(config.geminiApiKey);
+        Settings.embedModel = new GeminiEmbedding({
+          apiKey: this.config.geminiApiKey,
+          // Default model is 'models/embedding-001' (gemini-embedding-001)
+        });
         break;
+      case 'openai':
+        throw new Error('OpenAI provider not configured - use gemini or local');
       case 'e5-small':
-        this.embeddings = new LocalE5Embeddings('small');
+        // Use HuggingFace local embeddings
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'intfloat/multilingual-e5-small',
+        });
         break;
       case 'e5-large':
-        this.embeddings = new LocalE5Embeddings('large');
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'intfloat/multilingual-e5-large',
+        });
         break;
       default:
-        throw new Error(`Unknown provider: ${config.provider}`);
+        throw new Error(`Unknown provider: ${this.config.provider}`);
     }
+  }
 
-    this.vectorDb = new VectorDatabase(this.config.dbPath);
-    this.nerExtractor = new NERExtractor();
+  private async ensureTable(): Promise<Table> {
+    if (this.table) return this.table;
+
+    // Connect to LanceDB
+    this.db = await connect(this.config.dbPath);
+
+    // Check if table exists
+    const tableNames = await this.db.tableNames();
+    if (tableNames.includes('echoes_chapters')) {
+      this.table = await this.db.openTable('echoes_chapters');
+    }
+    // Table will be created on first insert
+
+    // Return undefined if table doesn't exist yet (will be created on first insert)
+    return this.table as Table;
+  }
+
+  private async embed(text: string): Promise<number[]> {
+    const embedModel = Settings.embedModel;
+    if (!embedModel) {
+      throw new Error('Embedding model not initialized');
+    }
+    const result = await embedModel.getTextEmbedding(text);
+    return result;
+  }
+
+  private getStorageContent(fullContent: string): string {
+    if (this.config.storeFullContent) {
+      return fullContent;
+    }
+    // Store only first 500 chars as excerpt
+    return fullContent.slice(0, 500) + (fullContent.length > 500 ? '...' : '');
   }
 
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
-    const queryEmbedding = await this.embeddings.generateEmbedding(query);
+    const table = await this.ensureTable();
     const maxResults = options.maxResults ?? this.config.maxResults;
 
-    let results = await this.vectorDb.search(queryEmbedding, maxResults);
+    // Generate query embedding
+    const queryEmbedding = await this.embed(query);
 
-    if (options.timeline) {
-      results = results.filter((r) => r.metadata.timelineName === options.timeline);
-    }
-    if (options.arc) {
-      results = results.filter((r) => r.metadata.arcName === options.arc);
-    }
-    if (options.pov) {
-      results = results.filter((r) => r.metadata.pov === options.pov);
-    }
-    if (options.characters) {
-      results = results.filter((r) => {
-        const chapterChars = r.metadata.characterNames || [];
+    // Search using LanceDB vector search
+    const results = await table
+      .vectorSearch(queryEmbedding)
+      .limit(maxResults * 2) // Get more for filtering
+      .toArray();
+
+    // Filter and format results
+    const filtered: SearchResult[] = [];
+
+    for (const row of results) {
+      const metadata = JSON.parse(row.metadata);
+
+      // Apply metadata filters
+      if (options.timeline && metadata.timelineName !== options.timeline) continue;
+      if (options.arc && metadata.arcName !== options.arc) continue;
+      if (options.pov && metadata.pov !== options.pov) continue;
+
+      // Apply character filters
+      if (options.characters) {
+        const chapterChars = metadata.characterNames || [];
         if (options.allCharacters) {
-          // AND: all characters must be present
-          return options.characters!.every((c) => chapterChars.includes(c));
+          if (!options.characters.every((c) => chapterChars.includes(c))) continue;
+        } else {
+          if (!options.characters.some((c) => chapterChars.includes(c))) continue;
         }
-        // OR: at least one character must be present
-        return options.characters!.some((c) => chapterChars.includes(c));
+      }
+
+      // LanceDB returns distance (lower is better), convert to similarity (higher is better)
+      // Distance is L2, convert to similarity score 0-1
+      const distance = row._distance ?? 0;
+      const similarity = 1 / (1 + distance);
+
+      filtered.push({
+        id: row.id,
+        metadata,
+        content: row.content,
+        similarity,
       });
+
+      if (filtered.length >= maxResults) break;
     }
 
-    return results;
+    // Sort by similarity (already sorted by LanceDB, but ensure descending)
+    filtered.sort((a, b) => b.similarity - a.similarity);
+
+    return filtered;
   }
 
   async getContext(options: ContextOptions): Promise<SearchResult[]> {
@@ -82,6 +165,7 @@ export class RAGSystem {
       arc: options.arc,
       pov: options.pov,
       maxResults: options.maxChapters ?? 5,
+      characters: options.characters,
     });
   }
 
@@ -91,8 +175,25 @@ export class RAGSystem {
       chapter.metadata.characterNames = await this.nerExtractor.extractCharacters(chapter.content);
     }
 
-    const [withEmbedding] = await this.embeddings.generateChapterEmbeddings([chapter]);
-    await this.vectorDb.addChapters([withEmbedding]);
+    await this.ensureTable();
+
+    // Generate embedding from FULL content
+    const embedding = await this.embed(chapter.content);
+
+    const row: LanceDBRow = {
+      id: chapter.id,
+      vector: embedding,
+      content: this.getStorageContent(chapter.content),
+      metadata: JSON.stringify(chapter.metadata),
+    };
+
+    // Create table if doesn't exist, or add to existing
+    if (!this.table) {
+      if (!this.db) throw new Error('Database not initialized');
+      this.table = await this.db.createTable('echoes_chapters', [row]);
+    } else {
+      await this.table.add([row]);
+    }
   }
 
   async addChapters(chapters: EmbeddingChapter[]): Promise<void> {
@@ -105,12 +206,32 @@ export class RAGSystem {
       }
     }
 
-    const withEmbeddings = await this.embeddings.generateChapterEmbeddings(chapters);
-    await this.vectorDb.addChapters(withEmbeddings);
+    await this.ensureTable();
+
+    // Generate embeddings for all chapters
+    const rows: LanceDBRow[] = [];
+    for (const chapter of chapters) {
+      const embedding = await this.embed(chapter.content);
+      rows.push({
+        id: chapter.id,
+        vector: embedding,
+        content: this.getStorageContent(chapter.content),
+        metadata: JSON.stringify(chapter.metadata),
+      });
+    }
+
+    // Create table if doesn't exist, or add to existing
+    if (!this.table) {
+      if (!this.db) throw new Error('Database not initialized');
+      this.table = await this.db.createTable('echoes_chapters', rows);
+    } else {
+      await this.table.add(rows);
+    }
   }
 
   async deleteChapter(id: string): Promise<void> {
-    await this.vectorDb.deleteChapter(id);
+    const table = await this.ensureTable();
+    await table.delete(`id = "${id}"`);
   }
 
   async getCharacterMentions(characterName: string): Promise<string[]> {
@@ -120,7 +241,9 @@ export class RAGSystem {
     for (const chapter of chapters) {
       const characters = chapter.metadata.characterNames || [];
       for (const char of characters) {
-        allCharacters.add(char);
+        if (char !== characterName) {
+          allCharacters.add(char);
+        }
       }
     }
 

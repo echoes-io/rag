@@ -19,10 +19,10 @@ The RAG (Retrieval-Augmented Generation) system provides semantic search capabil
 ## Architecture
 
 ```
-RAG System
-├── Embeddings Generator - Create vector embeddings for chapters
+RAG System (LlamaIndexTS + LanceDB)
+├── LlamaIndexTS - Document indexing and retrieval framework
+├── LanceDB - High-performance vector database with ANN search
 ├── NER Extractor - Extract character names from content
-├── Vector Database - SQLite with cosine similarity search
 └── Search API - Query interface with semantic + metadata filtering
 ```
 
@@ -40,8 +40,9 @@ npm install @echoes-io/rag
 import { RAGSystem } from '@echoes-io/rag';
 
 const rag = new RAGSystem({
-  provider: 'e5-small', // or 'e5-large', 'gemini'
-  dbPath: './rag.db'
+  provider: 'gemini', // or 'e5-small', 'e5-large'
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  dbPath: './lancedb'
 });
 ```
 
@@ -139,18 +140,21 @@ await rag.getCharacterMentions('Nic');
 
 ```typescript
 const config = {
-  provider: 'e5-small',              // 'e5-small', 'e5-large', or 'gemini'
+  provider: 'gemini',                    // 'gemini', 'e5-small', or 'e5-large'
   geminiApiKey: process.env.GEMINI_API_KEY,  // Required for 'gemini' provider
-  dbPath: './rag.db',                // SQLite database file
-  maxResults: 10                     // Default max results
+  dbPath: './lancedb',                   // LanceDB directory
+  maxResults: 10,                        // Default max results
+  storeFullContent: true                 // true = store full content (default)
 };
 ```
 
 ### Embedding Providers
 
-- **e5-small** - Local multilingual embeddings (384 dimensions, fast)
-- **e5-large** - Local multilingual embeddings (1024 dimensions, more accurate)
-- **gemini** - Google's text-embedding-004 (768 dimensions, requires API key)
+- **gemini** - Google's gemini-embedding-001 (768 dimensions, recommended)
+- **e5-small** - Local multilingual embeddings (384 dimensions, fast, offline)
+- **e5-large** - Local multilingual embeddings (1024 dimensions, more accurate, offline)
+
+Local embeddings run via HuggingFace Transformers.js and don't require API keys.
 
 ## Character Extraction (NER)
 
@@ -275,8 +279,9 @@ interface ChapterWithCharacters extends Chapter {
 }
 
 interface RAGConfig {
-  provider: 'e5-small' | 'e5-large' | 'gemini';
+  provider: 'e5-small' | 'e5-large' | 'gemini' | 'openai';
   geminiApiKey?: string;
+  openaiApiKey?: string;
   dbPath?: string;
   maxResults?: number;
 }
@@ -284,14 +289,15 @@ interface RAGConfig {
 
 ## Storage
 
-The system uses SQLite for vector storage with cosine similarity search computed in-memory. This approach is:
+The system uses LanceDB for vector storage with optimized ANN (Approximate Nearest Neighbor) search. This approach is:
 
-- **Simple**: Single file database, no external services
-- **Portable**: Committable to git, easy to backup
-- **Fast**: Suitable for hundreds to thousands of chapters
-- **Type-safe**: Uses Kysely query builder with TypeScript
+- **High Performance**: Native ANN indices (IVF, HNSW) for fast similarity search
+- **Scalable**: Handles thousands to millions of vectors efficiently
+- **File-based**: Directory-based storage, portable and easy to backup
+- **Zero-copy**: Efficient memory usage with columnar storage
+- **Type-safe**: Full TypeScript support via LlamaIndexTS
 
-The database file (`rag.db`) contains embeddings, metadata (including extracted characters), and content for all indexed chapters.
+The LanceDB directory contains embeddings, metadata (including extracted characters), and content for all indexed chapters.
 
 ## Development
 

@@ -1,235 +1,205 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { rimraf } from 'rimraf';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type {
-  ContextOptions,
-  EmbeddingChapter,
-  RAGConfig,
-  SearchOptions,
-  SearchResult,
-} from '../lib/types.js';
-import { MockEmbeddingsGenerator } from './mocks/embeddings.js';
-import { MockVectorDatabase } from './mocks/vector-db.js';
+import { RAGSystem } from '../lib/rag-system.js';
+import type { EmbeddingChapter } from '../lib/types.js';
 
-// Simplified RAGSystem for testing with mocks
-class TestRAGSystem {
-  private embeddings: MockEmbeddingsGenerator;
-  private vectorDb: MockVectorDatabase;
-  private config: Required<Omit<RAGConfig, 'geminiApiKey'>> & { geminiApiKey?: string };
+describe('RAGSystem (real, no mocks)', () => {
+  let rag: RAGSystem;
+  const testDbPath = './test-lancedb';
 
-  constructor(config: RAGConfig) {
-    this.config = {
-      dbPath: './rag_data.db',
-      maxResults: 10,
-      ...config,
-    };
-
-    this.embeddings = new MockEmbeddingsGenerator();
-    this.vectorDb = new MockVectorDatabase();
-  }
-
-  async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
-    const queryEmbedding = await this.embeddings.generateEmbedding(query);
-    const maxResults = options.maxResults ?? this.config.maxResults;
-
-    let results = await this.vectorDb.search(queryEmbedding, maxResults);
-
-    if (options.timeline) {
-      results = results.filter((r) => r.metadata.timelineName === options.timeline);
-    }
-    if (options.arc) {
-      results = results.filter((r) => r.metadata.arcName === options.arc);
-    }
-    if (options.pov) {
-      results = results.filter((r) => r.metadata.pov === options.pov);
-    }
-
-    return results;
-  }
-
-  async getContext(options: ContextOptions): Promise<SearchResult[]> {
-    return this.search(options.query, {
-      timeline: options.timeline,
-      arc: options.arc,
-      pov: options.pov,
-      maxResults: options.maxChapters ?? 5,
-    });
-  }
-
-  async addChapter(chapter: EmbeddingChapter): Promise<void> {
-    const [withEmbedding] = await this.embeddings.generateChapterEmbeddings([chapter]);
-    await this.vectorDb.addChapters([withEmbedding]);
-  }
-
-  async addChapters(chapters: EmbeddingChapter[]): Promise<void> {
-    const withEmbeddings = await this.embeddings.generateChapterEmbeddings(chapters);
-    await this.vectorDb.addChapters(withEmbeddings);
-  }
-
-  async deleteChapter(id: string): Promise<void> {
-    await this.vectorDb.deleteChapter(id);
-  }
-}
-
-const mockChapters: EmbeddingChapter[] = [
-  {
-    id: 'anima-1-1-1',
-    metadata: {
-      timelineName: 'anima',
-      timeline: 'test',
-      arcName: 'beginning',
-      arc: 'arc1',
-      episodeNumber: 1,
-      episode: 1,
-      partNumber: 1,
-      part: 1,
-      number: 1,
-      chapter: 1,
-      pov: 'nic',
-      title: 'First Meeting',
-      summary: 'Test summary',
-      date: '2024-01-15',
-      location: 'London',
-      words: 1500,
-      characters: 8000,
-      charactersNoSpaces: 6500,
-      paragraphs: 20,
-      sentences: 75,
-      readingTimeMinutes: 8,
-    },
-    content:
-      'The passionate encounter in London changed everything. Their eyes met across the crowded room.',
-  },
-  {
-    id: 'anima-1-1-2',
-    metadata: {
-      timelineName: 'anima',
-      timeline: 'test',
-      arcName: 'beginning',
-      arc: 'arc1',
-      episodeNumber: 1,
-      episode: 1,
-      partNumber: 1,
-      part: 1,
-      number: 2,
-      chapter: 1,
-      pov: 'partner',
-      title: 'Reflection',
-      summary: 'Test summary',
-      date: '2024-01-16',
-      location: 'London',
-      words: 1200,
-      characters: 6500,
-      charactersNoSpaces: 5200,
-      paragraphs: 15,
-      sentences: 60,
-      readingTimeMinutes: 6,
-    },
-    content: 'Looking back at that moment, the connection was undeniable. Something had shifted.',
-  },
-];
-
-describe('RAGSystem', () => {
-  let rag: TestRAGSystem;
-
-  beforeEach(() => {
-    rag = new TestRAGSystem({
+  beforeAll(async () => {
+    // Use real E5-small embeddings (local, no API key needed)
+    rag = new RAGSystem({
       provider: 'e5-small',
+      dbPath: testDbPath,
     });
+
+    // Add test chapters
+    const chapters: EmbeddingChapter[] = [
+      {
+        id: 'anima-01',
+        metadata: {
+          pov: 'nic',
+          title: 'First Meeting',
+          timeline: 'anima',
+          timelineName: 'anima',
+          arc: 'discovery',
+          arcName: 'discovery',
+          episode: 1,
+          episodeNumber: 1,
+          chapter: 1,
+          number: 1,
+          location: 'Rome',
+          characters: 1000,
+          charactersNoSpaces: 850,
+          part: 1,
+          partNumber: 1,
+          words: 200,
+          paragraphs: 2,
+          sentences: 2,
+          readingTimeMinutes: 1,
+          summary: 'First meeting between Nic and Alex',
+          date: '2024-01-01',
+        },
+        content: 'Nic met Alex for the first time in Rome. It was a sunny day.',
+      },
+      {
+        id: 'anima-02',
+        metadata: {
+          pov: 'alex',
+          title: 'Second Encounter',
+          timeline: 'anima',
+          timelineName: 'anima',
+          arc: 'discovery',
+          arcName: 'discovery',
+          episode: 1,
+          episodeNumber: 1,
+          chapter: 2,
+          number: 2,
+          location: 'Rome',
+          characters: 1200,
+          charactersNoSpaces: 1000,
+          part: 1,
+          partNumber: 1,
+          words: 240,
+          paragraphs: 2,
+          sentences: 2,
+          readingTimeMinutes: 1,
+          summary: 'Alex remembers the meeting',
+          date: '2024-01-02',
+        },
+        content: 'Alex remembered the meeting with Nic. The conversation was intense.',
+      },
+      {
+        id: 'eros-01',
+        metadata: {
+          pov: 'nic',
+          title: 'Office Work',
+          timeline: 'eros',
+          timelineName: 'eros',
+          arc: 'work',
+          arcName: 'work',
+          episode: 1,
+          episodeNumber: 1,
+          chapter: 1,
+          number: 1,
+          location: 'London',
+          characters: 1500,
+          charactersNoSpaces: 1250,
+          part: 1,
+          partNumber: 1,
+          words: 300,
+          paragraphs: 2,
+          sentences: 2,
+          readingTimeMinutes: 1,
+          summary: 'Working on presentation',
+          date: '2024-01-03',
+        },
+        content: 'Nic was working on a presentation in the London office. Deadline approaching.',
+      },
+    ];
+
+    await rag.addChapters(chapters);
   });
 
-  describe('addChapters', () => {
-    it('should add chapters with embeddings', async () => {
-      await rag.addChapters(mockChapters);
-
-      const results = await rag.search('London encounter', { maxResults: 2 });
-      expect(results).toHaveLength(2);
-      expect(results[0].id).toBeDefined();
-    });
-
-    it('should add single chapter', async () => {
-      await rag.addChapter(mockChapters[0]);
-
-      const results = await rag.search('passionate', { maxResults: 1 });
-      expect(results).toHaveLength(1);
-      expect(results[0].id).toBe('anima-1-1-1');
-    });
+  afterAll(async () => {
+    // Cleanup test database
+    await rimraf(testDbPath);
   });
 
-  describe('search', () => {
-    beforeEach(async () => {
-      await rag.addChapters(mockChapters);
-    });
+  it('should search and find similar content', async () => {
+    const results = await rag.search('meeting in Rome');
 
-    it('should find semantically similar content', async () => {
-      const results = await rag.search('romantic meeting in a city');
-
-      expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => r.content.includes('London'))).toBe(true);
-    });
-
-    it('should filter by timeline', async () => {
-      const results = await rag.search('encounter', { timeline: 'anima' });
-
-      expect(results.every((r) => r.metadata.timelineName === 'anima')).toBe(true);
-    });
-
-    it('should filter by pov', async () => {
-      const results = await rag.search('moment', { pov: 'nic' });
-
-      expect(results.every((r) => r.metadata.pov === 'nic')).toBe(true);
-    });
-
-    it('should limit results', async () => {
-      const results = await rag.search('London', { maxResults: 1 });
-
-      expect(results).toHaveLength(1);
-    });
-
-    it('should return similarity scores', async () => {
-      const results = await rag.search('passionate encounter');
-
-      expect(results[0].similarity).toBeGreaterThan(0);
-      expect(results[0].similarity).toBeLessThanOrEqual(1);
-    });
+    expect(results.length).toBeGreaterThan(0);
+    // Check that anima chapters are in results (both mention Rome/meeting)
+    const animaResults = results.filter((r) => r.metadata.timelineName === 'anima');
+    expect(animaResults.length).toBeGreaterThan(0);
+    expect(results[0].similarity).toBeGreaterThan(0.5);
   });
 
-  describe('getContext', () => {
-    beforeEach(async () => {
-      await rag.addChapters(mockChapters);
-    });
+  it('should filter by timeline', async () => {
+    const results = await rag.search('work', { timeline: 'eros' });
 
-    it('should retrieve context for AI', async () => {
-      const context = await rag.getContext({
-        query: 'relationship development',
-        maxChapters: 2,
-      });
-
-      expect(context).toHaveLength(2);
-      expect(context[0].metadata).toBeDefined();
-      expect(context[0].content).toBeDefined();
-    });
-
-    it('should filter context by timeline', async () => {
-      const context = await rag.getContext({
-        query: 'encounter',
-        timeline: 'anima',
-        maxChapters: 5,
-      });
-
-      expect(context.every((c) => c.metadata.timelineName === 'anima')).toBe(true);
-    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.metadata.timelineName === 'eros')).toBe(true);
   });
 
-  describe('deleteChapter', () => {
-    beforeEach(async () => {
-      await rag.addChapters(mockChapters);
+  it('should filter by POV', async () => {
+    const results = await rag.search('conversation', { pov: 'alex' });
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.metadata.pov === 'alex')).toBe(true);
+  });
+
+  it('should filter by arc', async () => {
+    const results = await rag.search('meeting', { arc: 'discovery' });
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.metadata.arcName === 'discovery')).toBe(true);
+  });
+
+  it('should respect maxResults', async () => {
+    const results = await rag.search('Rome London', { maxResults: 2 });
+
+    expect(results.length).toBeLessThanOrEqual(2);
+  });
+
+  it('should get context for AI', async () => {
+    const context = await rag.getContext({
+      query: 'relationship between characters',
+      timeline: 'anima',
+      maxChapters: 2,
     });
 
-    it('should delete chapter from database', async () => {
-      await rag.deleteChapter('anima-1-1-1');
+    expect(context.length).toBeLessThanOrEqual(2);
+    expect(context.every((c) => c.metadata.timelineName === 'anima')).toBe(true);
+  });
 
-      const results = await rag.search('passionate encounter', { maxResults: 10 });
-      expect(results.find((r) => r.id === 'anima-1-1-1')).toBeUndefined();
+  it('should extract and filter by characters', async () => {
+    const results = await rag.search('conversation', {
+      characters: ['Nic', 'Alex'],
+      allCharacters: false, // At least one
     });
+
+    expect(results.length).toBeGreaterThan(0);
+    for (const result of results) {
+      const chars = result.metadata.characterNames || [];
+      const hasNicOrAlex = chars.includes('Nic') || chars.includes('Alex');
+      expect(hasNicOrAlex).toBe(true);
+    }
+  });
+
+  it('should get character mentions', async () => {
+    const characters = await rag.getCharacterMentions('Nic');
+
+    expect(characters).toContain('Alex');
+  });
+
+  it('should return results sorted by similarity', async () => {
+    const results = await rag.search('Rome meeting sunny');
+
+    expect(results.length).toBeGreaterThan(1);
+    // Check descending order
+    for (let i = 0; i < results.length - 1; i++) {
+      expect(results[i].similarity).toBeGreaterThanOrEqual(results[i + 1].similarity);
+    }
+  });
+
+  it('should handle empty results gracefully', async () => {
+    const results = await rag.search('nonexistent topic xyz123', {
+      timeline: 'nonexistent',
+    });
+
+    expect(results).toEqual([]);
+  });
+
+  it('should delete chapter', async () => {
+    // Delete one of the existing chapters
+    await rag.deleteChapter('anima-01');
+
+    // Verify it's gone
+    const results = await rag.search('First Meeting');
+    expect(results.some((r) => r.id === 'anima-01')).toBe(false);
   });
 });

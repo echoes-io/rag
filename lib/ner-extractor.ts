@@ -1,14 +1,21 @@
-import { pipeline } from '@xenova/transformers';
+import { pipeline, type TokenClassificationPipeline } from '@xenova/transformers';
+
+interface NEREntity {
+  entity: string;
+  word: string;
+  score: number;
+}
 
 export class NERExtractor {
-  private nerPipeline: any = null;
+  private nerPipeline: TokenClassificationPipeline | null = null;
   private cache = new Map<string, string[]>();
 
   async extractCharacters(text: string): Promise<string[]> {
     // Check cache
     const cacheKey = this.hashText(text);
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     // Ensure pipeline is loaded
@@ -16,13 +23,13 @@ export class NERExtractor {
     if (!this.nerPipeline) throw new Error('NER pipeline not loaded');
 
     // Extract entities
-    const entities = await this.nerPipeline(text);
+    const entities = (await this.nerPipeline(text)) as NEREntity[];
 
     // Filter for people (PER) and clean
-    const people = (entities as any[])
-      .filter((e: any) => e.entity && e.entity.includes('PER'))
-      .map((e: any) => this.cleanName(e.word))
-      .filter((name: string) => name.length > 2); // Remove initials
+    const people = entities
+      .filter((e) => e.entity?.includes('PER'))
+      .map((e) => this.cleanName(e.word))
+      .filter((name) => name.length > 2); // Remove initials
 
     // Deduplicate
     const uniquePeople = [...new Set(people)];
@@ -35,10 +42,10 @@ export class NERExtractor {
 
   private async ensureLoaded(): Promise<void> {
     if (!this.nerPipeline) {
-      this.nerPipeline = await pipeline(
+      this.nerPipeline = (await pipeline(
         'token-classification',
         'Xenova/bert-base-multilingual-cased-ner-hrl',
-      );
+      )) as TokenClassificationPipeline;
     }
   }
 
