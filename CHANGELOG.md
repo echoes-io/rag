@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/echoes-io/rag/compare/v1.2.0...v1.3.0) (2025-12-15)
+
+
+### Features
+
+* **kiro:** migrate from Amazon Q to Kiro agent configuration ([6ae6495](https://github.com/echoes-io/rag/commit/6ae6495abaf3959aeded2029e09fdfd00f0ad8b3))
+* migrate to LlamaIndexTS + LanceDB with improved architecture ([c353d35](https://github.com/echoes-io/rag/commit/c353d3537f93abc7c448e621b241407764f37324))
+* rename agent from 'default' to 'dev' and add code tool ([96ee466](https://github.com/echoes-io/rag/commit/96ee466a1a810d600640b2b84702cd84d7d57ce8))
+
 # [1.2.0](https://github.com/echoes-io/rag/compare/v1.1.3...v1.2.0) (2025-11-03)
 
 
