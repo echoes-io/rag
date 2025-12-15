@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/echoes-io/rag/compare/v1.3.0...v1.3.1) (2025-12-15)
+
+
+### Performance Improvements
+
+* :sparkles: Replacing `e5-large` with `EmbeddingGemma` ([3bc82b7](https://github.com/echoes-io/rag/commit/3bc82b7ded3ad7d5e98e670300ac985fe2dae69a))
+
 # [1.3.0](https://github.com/echoes-io/rag/compare/v1.2.0...v1.3.0) (2025-12-15)
 
 
