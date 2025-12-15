@@ -40,7 +40,7 @@ npm install @echoes-io/rag
 import { RAGSystem } from '@echoes-io/rag';
 
 const rag = new RAGSystem({
-  provider: 'gemini', // or 'e5-small', 'e5-large'
+  provider: 'e5-small', // or 'embeddinggemma', 'gemini'
   geminiApiKey: process.env.GEMINI_API_KEY,
   dbPath: './lancedb'
 });
@@ -140,7 +140,7 @@ await rag.getCharacterMentions('Nic');
 
 ```typescript
 const config = {
-  provider: 'gemini',                    // 'gemini', 'e5-small', or 'e5-large'
+  provider: 'e5-small',                  // 'e5-small', 'embeddinggemma', or 'gemini'
   geminiApiKey: process.env.GEMINI_API_KEY,  // Required for 'gemini' provider
   dbPath: './lancedb',                   // LanceDB directory
   maxResults: 10,                        // Default max results
@@ -150,11 +150,13 @@ const config = {
 
 ### Embedding Providers
 
-- **gemini** - Google's gemini-embedding-001 (768 dimensions, recommended)
-- **e5-small** - Local multilingual embeddings (384 dimensions, fast, offline)
-- **e5-large** - Local multilingual embeddings (1024 dimensions, more accurate, offline)
+- **e5-small** - Local multilingual embeddings (384 dimensions, fast, offline, default)
+- **embeddinggemma** - Google's EmbeddingGemma-300m (768 dimensions, SOTA, may require access)
+- **gemini** - Google's gemini-embedding-001 (768 dimensions, API required)
 
 Local embeddings run via HuggingFace Transformers.js and don't require API keys.
+
+**Note**: EmbeddingGemma may require special access or newer transformers.js version.
 
 ## Character Extraction (NER)
 
@@ -298,6 +300,12 @@ The system uses LanceDB for vector storage with optimized ANN (Approximate Neare
 - **Type-safe**: Full TypeScript support via LlamaIndexTS
 
 The LanceDB directory contains embeddings, metadata (including extracted characters), and content for all indexed chapters.
+
+### Database Management
+
+- **Test databases**: Ignored in git (pattern: `test-*`, `*-test*`)
+- **Production databases**: Should be committed in timeline repositories (e.g., `lancedb/`, `rag-db/`)
+- **Backup**: Simply copy the LanceDB directory
 
 ## Development
 

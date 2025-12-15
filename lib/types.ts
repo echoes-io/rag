@@ -1,6 +1,6 @@
 import type { Chapter } from '@echoes-io/models';
 
-export type EmbeddingProvider = 'e5-small' | 'e5-large' | 'gemini' | 'openai';
+export type EmbeddingProvider = 'e5-small' | 'embeddinggemma' | 'gemini' | 'openai';
 
 // Extended Chapter with NER results
 export interface ChapterWithCharacters extends Chapter {

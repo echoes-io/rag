@@ -60,9 +60,10 @@ export class RAGSystem {
           modelType: 'intfloat/multilingual-e5-small',
         });
         break;
-      case 'e5-large':
+      case 'embeddinggemma':
+        // Note: EmbeddingGemma may require special access or newer transformers.js version
         Settings.embedModel = new HuggingFaceEmbedding({
-          modelType: 'intfloat/multilingual-e5-large',
+          modelType: 'google/embeddinggemma-300m',
         });
         break;
       default:
