@@ -3,10 +3,10 @@ import { afterAll } from 'vitest';
 // Global cleanup to prevent worker hanging
 afterAll(async () => {
   // Give transformers.js workers time to cleanup
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  // Force exit if needed
-  if (process.env.CI) {
-    process.exit(0);
+  // Cleanup transformers workers properly
+  if (globalThis.gc) {
+    globalThis.gc();
   }
 });
