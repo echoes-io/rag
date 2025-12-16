@@ -55,9 +55,28 @@ export class RAGSystem {
       case 'openai':
         throw new Error('OpenAI provider not configured - use gemini or local');
       case 'e5-small':
-        // Use HuggingFace local embeddings
         Settings.embedModel = new HuggingFaceEmbedding({
           modelType: 'intfloat/multilingual-e5-small',
+        });
+        break;
+      case 'e5-large':
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'intfloat/multilingual-e5-large',
+        });
+        break;
+      case 'bge-base':
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'BAAI/bge-base-en-v1.5',
+        });
+        break;
+      case 'nomic-embed':
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'nomic-ai/nomic-embed-text-v1',
+        });
+        break;
+      case 'qwen3':
+        Settings.embedModel = new HuggingFaceEmbedding({
+          modelType: 'onnx-community/Qwen3-Embedding-0.6B-ONNX',
         });
         break;
       case 'embeddinggemma':

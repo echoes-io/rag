@@ -40,8 +40,8 @@ npm install @echoes-io/rag
 import { RAGSystem } from '@echoes-io/rag';
 
 const rag = new RAGSystem({
-  provider: 'e5-small', // or 'embeddinggemma', 'gemini'
-  geminiApiKey: process.env.GEMINI_API_KEY,
+  provider: 'qwen3', // or 'nomic-embed', 'bge-base', 'e5-large', 'e5-small', 'gemini'
+  geminiApiKey: process.env.GEMINI_API_KEY, // Only required for 'gemini'
   dbPath: './lancedb'
 });
 ```
@@ -140,7 +140,7 @@ await rag.getCharacterMentions('Nic');
 
 ```typescript
 const config = {
-  provider: 'e5-small',                  // 'e5-small', 'embeddinggemma', or 'gemini'
+  provider: 'qwen3',                     // 'qwen3', 'nomic-embed', 'bge-base', 'e5-large', 'e5-small', or 'gemini'
   geminiApiKey: process.env.GEMINI_API_KEY,  // Required for 'gemini' provider
   dbPath: './lancedb',                   // LanceDB directory
   maxResults: 10,                        // Default max results
@@ -150,13 +150,14 @@ const config = {
 
 ### Embedding Providers
 
-- **e5-small** - Local multilingual embeddings (384 dimensions, fast, offline, default)
-- **embeddinggemma** - Google's EmbeddingGemma-300m (768 dimensions, SOTA, may require access)
+- **qwen3** - Qwen3-Embedding-0.6B-ONNX (1024 dimensions, SOTA multilingual, #1 on MTEB)
+- **nomic-embed** - Nomic Embed v1 (768 dimensions, excellent accuracy, 86.2% benchmark)
+- **bge-base** - BGE-Base-v1.5 (768 dimensions, balanced performance, 84.7% accuracy)
+- **e5-large** - E5 multilingual large (1024 dimensions, robust multilingual)
+- **e5-small** - E5 multilingual small (384 dimensions, fast, offline, good baseline)
 - **gemini** - Google's gemini-embedding-001 (768 dimensions, API required)
 
-Local embeddings run via HuggingFace Transformers.js and don't require API keys.
-
-**Note**: EmbeddingGemma may require special access or newer transformers.js version.
+All local embeddings run via HuggingFace Transformers.js and don't require API keys.
 
 ## Character Extraction (NER)
 
@@ -281,7 +282,7 @@ interface ChapterWithCharacters extends Chapter {
 }
 
 interface RAGConfig {
-  provider: 'e5-small' | 'e5-large' | 'gemini' | 'openai';
+  provider: 'qwen3' | 'nomic-embed' | 'bge-base' | 'e5-large' | 'e5-small' | 'gemini';
   geminiApiKey?: string;
   openaiApiKey?: string;
   dbPath?: string;
@@ -341,6 +342,16 @@ Automatically processes content from timeline repositories:
 - `timeline-bloom/content/`
 
 ## Performance
+
+### Embedding Model Comparison
+
+| Model | Accuracy | Speed | Dimensions | Best For |
+|-------|----------|-------|------------|----------|
+| **qwen3** | 70.58 MTEB | Medium | 1024 | Best overall, multilingual |
+| **nomic-embed** | 86.2% | Slow | 768 | High accuracy tasks |
+| **bge-base** | 84.7% | Medium | 768 | Balanced performance |
+| **e5-large** | 83.5% | Fast | 1024 | Good multilingual baseline |
+| **e5-small** | 78.1% | Very Fast | 384 | Speed-critical applications |
 
 - **Indexing**: ~100-200ms per chapter (including NER)
 - **Search**: <50ms for typical queries
