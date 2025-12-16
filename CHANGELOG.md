@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/echoes-io/rag/compare/v1.3.1...v1.4.0) (2025-12-16)
+
+
+### Features
+
+* add advanced embedding providers (qwen3, nomic-embed, bge-base) ([618432c](https://github.com/echoes-io/rag/commit/618432c85ab43266cd7b8adedf12bd706716d3be))
+
 ## [1.3.1](https://github.com/echoes-io/rag/compare/v1.3.0...v1.3.1) (2025-12-15)
 
 
